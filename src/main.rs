@@ -2,8 +2,6 @@ use std::fs;
 use std::fs::File;
 use std::io::prelude::*;
 
-use clap;
-
 fn main() {
     let matches = clap::App::new("FileMoveProgram")
         .version("0.2")
@@ -26,21 +24,13 @@ fn main() {
         )
         .get_matches();
 
-    // This should be changed during a release build
+    // This should be changed to unwrap() during a release build
     // as it is not acceptible for offical releases.
     // Uncomment top for debugging
-    let mut folder_in = matches.value_of("INPUT FOLDER").unwrap().to_string();
+    let folder_in = matches.value_of("INPUT FOLDER").unwrap();
     //.unwrap_or(r"C:\Users\jacob\Desktop\Move From");
-    let mut folder_out = matches.value_of("OUTPUT FOLDER").unwrap().to_string();
+    let folder_out = matches.value_of("OUTPUT FOLDER").unwrap();
     //.unwrap_or(r"C:\Users\jacob\Desktop\Move To");
-
-    // Fix cases where folder doesnt end with a "\"
-    if !folder_in.ends_with(r"\") {
-        folder_in = [folder_in, r"\".to_string()].join("");
-    }
-    if !folder_out.ends_with(r"\") {
-        folder_out = [folder_out, r"\".to_string()].join("");
-    }
 
     println!("Folder In {}\nFolder Out {}\n", folder_in, folder_out);
 
@@ -62,9 +52,7 @@ fn main() {
 }
 
 fn find_files(folder_in: &str) -> fs::ReadDir {
-    let files = fs::read_dir(folder_in).expect("Error in find_files()");
-
-    files
+    fs::read_dir(folder_in).expect("Error in find_files()")
 }
 
 fn move_file(file_name: &str, folder_in: &str, folder_out: &str) {
@@ -74,7 +62,7 @@ fn move_file(file_name: &str, folder_in: &str, folder_out: &str) {
 }
 
 fn read_file(folder_in: &str, file_name: &str) -> Vec<u8> {
-    let file_result = File::open([folder_in, file_name].join(""));
+    let file_result = File::open([folder_in, file_name].join(r"\"));
 
     let mut file = file_result.expect("File dont exist or something");
 
@@ -86,7 +74,7 @@ fn read_file(folder_in: &str, file_name: &str) -> Vec<u8> {
 }
 
 fn write_file(contents: Vec<u8>, folder_out: &str, file_name: &str) {
-    let file_result = File::create([folder_out, file_name].join(""));
+    let file_result = File::create([folder_out, file_name].join(r"\"));
 
     let mut file = file_result.expect("Can not create the file sucker");
 
@@ -94,12 +82,12 @@ fn write_file(contents: Vec<u8>, folder_out: &str, file_name: &str) {
 }
 
 fn delete_file(folder_in: &str, file_name: &str) {
-    fs::remove_file([folder_in, file_name].join("")).expect("Cant remove the files!");
+    fs::remove_file([folder_in, file_name].join(r"\")).expect("Cant remove the files!");
 }
 
 #[test]
 fn read_file_test() {
-    let folder_in = r"tests\";
+    let folder_in = r"tests";
     let file_name = r"testfile.txt";
     let contents = read_file(folder_in, file_name);
 
