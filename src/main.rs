@@ -32,16 +32,23 @@ fn main() {
         )
         .get_matches();
 
+    // Collect the matched values into variables
     let folder_in = Path::new(matches.value_of("INPUT FOLDER").unwrap());
     let folder_out = Path::new(matches.value_of("OUTPUT FOLDER").unwrap());
     let is_delete = matches.is_present("DELETE");
 
+    // Automatically check and move files when they are
+    // found. Runs indef until program is ended
     loop {
         start(folder_in, folder_out, is_delete);
         std::thread::sleep(std::time::Duration::from_secs_f32(1.0));
     }
 }
 
+/// This function move the files in to memory and then into the folder
+/// Takes a Folder in, Folder out, and a delete bool as Arguments.
+/// The reason this function is separate from the main function is
+/// to provide a simple way of easily creating and running tests.
 fn start(folder_in: &Path, folder_out: &Path, is_delete: bool) {
     for path in find_files(folder_in) {
         if !path.is_dir() {
@@ -51,6 +58,7 @@ fn start(folder_in: &Path, folder_out: &Path, is_delete: bool) {
             let contents = read_file(&path.to_path_buf());
             write_file(contents, &pathize!(folder_out, file_name));
 
+            // Optional delete flag
             if is_delete {
                 delete_file(&path);
             }
@@ -72,13 +80,13 @@ fn find_files(folder: &Path) -> Vec<PathBuf> {
 /// Read a file in to memory as a Vector of Bytes.
 /// Takes a Folder and a File name as Arguments.
 /// Throws Error if path to file is wrong or if application
-/// doesnt have Permission to access the file.
+/// doesn't have permission to access the file.
 fn read_file(path: &Path) -> Vec<u8> {
-    let mut file = fs::File::open(path).expect("File does not exist or is inaccessable");
+    let mut file = fs::File::open(path).expect("File does not exist or is inaccessible");
 
     let mut contents = Vec::new();
     file.read_to_end(&mut contents)
-        .expect("Cant retreive contents from file. ");
+        .expect("Cant retrieve contents from file. ");
 
     contents
 }
@@ -96,11 +104,13 @@ fn write_file(contents: Vec<u8>, path: &Path) {
 /// Removes a file from the filesystem.
 /// Takes a Folder and a File name as Arguments.
 /// Throws Error if path to file is wrong or if application
-/// doesnt have Permission to access the file.
+/// doesn't have Permission to access the file.
 fn delete_file(path: &Path) {
     fs::remove_file(path).expect("Can not remove the files. ");
 }
 
+/// pathize is a simple macro that creates a PathBuf
+/// given an arbitrary number of strings.
 #[macro_export]
 macro_rules! pathize {
     ($($args:expr),*) => {{
@@ -113,7 +123,7 @@ macro_rules! pathize {
 // This test may need to be rewritten, we need to have
 // the assertions fail if the file can not be found.
 #[test]
-fn move_files_test() {
+fn move_file_test() {
     let cur_dir = std::env::current_dir().unwrap();
     let folder_in = pathize!(cur_dir.to_str().unwrap(), "tests", "from");
     let folder_out = pathize!(cur_dir.to_str().unwrap(), "tests", "to");
@@ -129,8 +139,7 @@ fn move_files_test() {
 
         if path.file_name().unwrap() == "Something.txt" {
             assert_eq!(s, "Some Text");
-        }
-        else {
+        } else {
             assert!(false);
         }
 
@@ -155,6 +164,7 @@ fn read_abs_file_test() {
     assert_eq!(std::str::from_utf8(&contents).unwrap(), "You dumb");
 }
 
+/// A test to make sure the pathize! macro works correctly.
 #[test]
 fn pathize_macro_test() {
     let a: PathBuf = pathize!("tests", "testfile.txt");
@@ -163,8 +173,10 @@ fn pathize_macro_test() {
     assert_eq!(a, p);
 }
 
+/// Simple test to make sure that the contents of the
+/// file is being read correctly.
 #[test]
-fn move_file_test() {
+fn read_file_test() {
     let path = pathize!("tests", "testfile.txt");
     let contents = read_file(&path);
 
