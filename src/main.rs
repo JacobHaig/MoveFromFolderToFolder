@@ -120,8 +120,6 @@ macro_rules! pathize {
 }
 
 // This test is a own program test.
-// This test may need to be rewritten, we need to have
-// the assertions fail if the file can not be found.
 #[test]
 fn move_file_test() {
     let cur_dir = std::env::current_dir().unwrap();
@@ -133,18 +131,21 @@ fn move_file_test() {
 
     // Find the moved file, verify that it is there and correct.
     // Then remove the file.
+    
+    let mut move_correctly = false;
     for path in find_files(&folder_out) {
         let content = read_file(&path);
         let s = std::str::from_utf8(&content).unwrap();
 
+        // Only check and delete the Something.txt file
         if path.file_name().unwrap() == "Something.txt" {
-            assert_eq!(s, "Some Text");
-        } else {
-            assert!(false);
-        }
-
-        delete_file(&path);
+            if s == "Some Text"{
+                move_correctly = true;
+            }
+            delete_file(&path);
+        } 
     }
+    assert!(move_correctly);
 }
 
 #[test]
