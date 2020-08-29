@@ -30,18 +30,42 @@ fn main() {
                 .long("delete")
                 .help("Sets whether to delete files and folder"),
         )
+        .arg(
+            clap::Arg::with_name("COUNT")
+                .short("c")
+                .long("count")
+                .default_value("-1")
+                .takes_value(true)
+                .help("Sets the number of files to transfer"),
+        )
+        .arg(
+            clap::Arg::with_name("LOOP")
+                .short("l")
+                .long("loop")
+                .help("Sets whether to loop indefinalitly"),
+        )
         .get_matches();
 
     // Collect the matched values into variables
     let folder_in = Path::new(matches.value_of("INPUT FOLDER").unwrap());
     let folder_out = Path::new(matches.value_of("OUTPUT FOLDER").unwrap());
     let is_delete = matches.is_present("DELETE");
+    let is_loop = matches.is_present("LOOP");
+    let count: i16 = matches
+        .value_of("COUNT")
+        .unwrap_or_default()
+        .parse()
+        .expect("Thats not an interger!");
+
 
     // Automatically check and move files when they are
     // found. Runs indef until program is ended
-    loop {
-        start(folder_in, folder_out, is_delete);
+        
+    //println!("{}",count);
+    start(folder_in, folder_out, is_delete, count);
+    while is_loop {
         std::thread::sleep(std::time::Duration::from_secs_f32(1.0));
+        start(folder_in, folder_out, is_delete, count);
     }
 }
 
@@ -49,9 +73,9 @@ fn main() {
 /// Takes a Folder in, Folder out, and a delete bool as Arguments.
 /// The reason this function is separate from the main function is
 /// to provide a simple way of easily creating and running tests.
-fn start(folder_in: &Path, folder_out: &Path, is_delete: bool) {
+fn start(folder_in: &Path, folder_out: &Path, is_delete: bool, mut count: i16) {
     for path in find_files(folder_in) {
-        if !path.is_dir() {
+        if !path.is_dir() && (count > 0 || count == -1) {
             // Return just the name of the file.
             let file_name = path.file_name().unwrap().to_str().unwrap();
 
@@ -62,6 +86,7 @@ fn start(folder_in: &Path, folder_out: &Path, is_delete: bool) {
             if is_delete {
                 delete_file(&path);
             }
+            count -= 1;
         }
     }
 }
@@ -126,12 +151,13 @@ fn move_file_test() {
     let folder_in = pathize!(cur_dir.to_str().unwrap(), "tests", "from");
     let folder_out = pathize!(cur_dir.to_str().unwrap(), "tests", "to");
     let is_delete = false;
+    let count = -1;
 
-    start(&folder_in, &folder_out, is_delete);
+    start(&folder_in, &folder_out, is_delete, count);
 
     // Find the moved file, verify that it is there and correct.
     // Then remove the file.
-    
+
     let mut move_correctly = false;
     for path in find_files(&folder_out) {
         let content = read_file(&path);
@@ -139,11 +165,11 @@ fn move_file_test() {
 
         // Only check and delete the Something.txt file
         if path.file_name().unwrap() == "Something.txt" {
-            if s == "Some Text"{
+            if s == "Some Text" {
                 move_correctly = true;
             }
             delete_file(&path);
-        } 
+        }
     }
     assert!(move_correctly);
 }
